@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Translate CMI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-image: url('https://source.unsplash.com/random/1920x1080');
+            background-size: cover;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        input[type="file"] {
+            padding: 10px;
+            background-color: #444;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+        }
+
+        select, button {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+        }
+
+        button {
+            background-color: #28a745;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        #result {
+            margin-top: 20px;
+        }
+
+        #downloadLink {
+            color: #ffc107;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Translate Your PDF Document</h1>
+        <form id="translateForm">
+            <label for="pdfFile">Upload PDF:</label>
+            <input type="file" id="pdfFile" accept=".pdf" required>
+            
+            <label for="sourceLanguage">Source Language:</label>
+            <select id="sourceLanguage">
+                <!-- Add language options -->
+                <option value="en">English</option>
+                <option value="fr">French</option>
+                <option value="es">Spanish</option>
+                <!-- Add more options as needed -->
+            </select>
+            
+            <label for="targetLanguage">Target Language:</label>
+            <select id="targetLanguage">
+                <!-- Add language options -->
+                <option value="fr">French</option>
+                <option value="en">English</option>
+                <option value="es">Spanish</option>
+                <!-- Add more options as needed -->
+            </select>
+            
+            <button type="submit">Translate CMI</button>
+        </form>
+        
+        <div id="result">
+            <h2>Translated CMI</h2>
+            <a id="downloadLink" style="display:none;">Download Translated CMI</a>
+        </div>
+    </div>
+    <script>
+        document.getElementById('translateForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const pdfFile = document.getElementById('pdfFile').files[0];
+            const sourceLanguage = document.getElementById('sourceLanguage').value;
+            const targetLanguage = document.getElementById('targetLanguage').value;
+
+            if (!pdfFile) {
+                alert('Please upload a PDF file.');
+                return;
+            }
+
+            // Convert the PDF file to base64
+            const reader = new FileReader();
+            reader.readAsDataURL(pdfFile);
+            reader.onload = async function () {
+                const base64PDF = reader.result.split(',')[1];
+
+                // Call your backend to handle the translation
+                try {
+                    const response = await fetch('https://<your-fly-app-name>.fly.dev/translate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            pdfBase64: base64PDF,
+                            sourceLanguage: sourceLanguage,
+                            targetLanguage: targetLanguage
+                        })
+                    });
+
+                    const data = await response.json();
+                    if (data.error) {
+                        alert('Translation failed: ' + data.error.message);
+                        return;
+                    }
+
+                    const translatedPDFBase64 = data.translatedPDFBase64;
+
+                    // Create a downloadable link for the translated PDF
+                    const downloadLink = document.getElementById('downloadLink');
+                    downloadLink.href = 'data:application/pdf;base64,' + translatedPDFBase64;
+                    downloadLink.download = 'translated_cmi.pdf';
+                    downloadLink.style.display = 'block';
+
+                } catch (error) {
+                    alert('Error: ' + error.message);
+                }
+            };
+        });
+    </script>
+</body>
+</html>
